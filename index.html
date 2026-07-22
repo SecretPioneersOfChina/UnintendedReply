@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, width=device-width">
+    <title>无心之举 - Unintended Reply</title>
+    <meta name="description" content="一款互动电影式聊天游戏。每条消息，都将改变命运。">
+    <meta name="theme-color" content="#0a0a0f">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css?v=1">
+
+    <!-- PWA Support -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+    <!-- ====== 启动画面 ====== -->
+    <div id="splash-screen">
+        <div class="splash-logo"><img src="img/logo.png" alt="Logo" class="splash-logo-img"></div>
+        <div class="splash-subtitle">Unintended Reply</div>
+        <div class="splash-loader"></div>
+        <div style="margin-top:20px;font-size:0.8rem;color:var(--text-muted);" id="splash-text"></div>
+    </div>
+
+    <!-- ====== 主应用 ====== -->
+    <div id="app">
+
+        <!-- 顶部栏 -->
+        <div id="top-bar">
+            <span class="game-title" id="game-title">无心之举</span>
+            <div class="top-bar-actions">
+                <button class="top-btn" id="btn-save" title="保存"><img src="img/save.png" alt="保存" class="top-btn-img"></button>
+                <button class="top-btn" id="btn-settings" title="设置"><img src="img/settings.png" alt="设置" class="top-btn-img"></button>
+            </div>
+        </div>
+
+        <!-- 聊天区域 -->
+        <div id="chat-container">
+            <div id="messages"></div>
+            <!-- 打字指示器 -->
+            <div id="typing-indicator">
+                <div class="typing-dots">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选择区域 -->
+        <div id="choice-area" style="display:none;">
+            <div id="choices"></div>
+        </div>
+
+    </div>
+
+    <!-- ====== 章节横幅 ====== -->
+    <div id="chapter-banner">
+        <div class="chapter-banner-content">
+            <div class="chapter-number" id="banner-chapter">第一章</div>
+            <div class="chapter-title" id="banner-title">陌生来信</div>
+            <div class="chapter-subtitle" id="banner-subtitle">一个消息，打破平静的夜</div>
+            <button class="chapter-continue" id="banner-continue">继续</button>
+        </div>
+    </div>
+
+    <!-- ====== 结局画面 ====== -->
+    <div id="ending-screen">
+        <div class="ending-card">
+            <div class="ending-icon">🌟</div>
+            <div class="ending-title">结局标题</div>
+            <div class="ending-type">完美结局</div>
+            <div class="ending-description">结局描述</div>
+            <div class="ending-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-choices">0</div>
+                    <div class="stat-label">选择</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-endings">0</div>
+                    <div class="stat-label">结局</div>
+                </div>
+            </div>
+            <div class="ending-actions">
+                <button class="ending-btn" id="ending-replay">重玩本章</button>
+                <button class="ending-btn" id="ending-menu">返回主菜单</button>
+                <button class="ending-btn primary" id="ending-next">下一章</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 设计器面板 ====== -->
+    <div id="designer-overlay" style="display:none;position:fixed;inset:0;z-index:1500;background:var(--bg-primary);">
+        <div id="designer-canvas" style="display:flex;flex-direction:column;height:100%;width:100%;"></div>
+    </div>
+
+    <!-- ====== 设置面板 ====== -->
+    <div id="settings-overlay">
+        <div class="settings-panel">
+            <div class="settings-title">设置</div>
+            <div class="settings-section">
+                <div class="settings-label">语言 / Language / 言語</div>
+                <div class="language-options">
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                    <button class="lang-btn" data-lang="en">English</button>
+                    <button class="lang-btn" data-lang="ja">日本語</button>
+                </div>
+            </div>
+            <div style="text-align:center;">
+                <button class="ending-btn primary" id="settings-close" style="width:100%;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== Scripts ====== -->
+    <!-- 错误处理 - 若脚本加载失败，显示错误信息而不是卡在启动画面 -->
+    <script>
+        window.addEventListener('error', function(e) {
+            console.error('Script error:', e.message, 'at', e.filename, ':', e.lineno);
+            var splash = document.getElementById('splash-screen');
+            if (splash) {
+                var err = document.createElement('div');
+                err.style.cssText = 'color:#ff4d4f;margin-top:20px;font-size:14px;text-align:center;max-width:80%;line-height:1.6;';
+                err.textContent = '加载失败: ' + e.message + '\n(' + e.filename + ':' + e.lineno + ')';
+                splash.appendChild(err);
+            }
+        });
+        // 超时保护：若5秒后仍未初始化，提示用户
+        setTimeout(function() {
+            if (document.getElementById('splash-screen') && !document.getElementById('app').classList.contains('active')) {
+                var splash = document.getElementById('splash-screen');
+                var err = document.createElement('div');
+                err.style.cssText = 'color:#ff4d4f;margin-top:20px;font-size:14px;text-align:center;max-width:80%;';
+                err.textContent = '加载超时，请刷新页面或检查网络连接。';
+                splash.appendChild(err);
+            }
+        }, 5000);
+    </script>
+
+    <!-- 注意加载顺序：依赖关系为 i18n → save → storyCore → 故事文件 → story → game → designer -->
+    <script src="js/i18n.js?v=4"></script>
+    <script src="js/save.js?v=4"></script>
+    <script src="js/story/storyCore.js?v=4"></script>
+    <script src="js/story/storyUnintendedReply.js?v=4"></script>
+    <script src="js/story/storyDarkDetective.js?v=4"></script>
+    <script src="js/story/storyLastSurvivor.js?v=4"></script>
+    <script src="js/story/storyDetroit.js?v=4"></script>
+    <script src="js/story.js?v=4"></script>
+    <script src="js/game.js?v=4"></script>
+    <script src="js/designer.js?v=4"></script>
+
+</body>
+</html>
